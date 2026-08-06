@@ -12,6 +12,7 @@ import math
 import statistics
 from dataclasses import dataclass
 from enum import Enum
+from typing import Sequence
 
 
 class Verdict(Enum):
@@ -37,16 +38,20 @@ class Decision:
     reason: str
 
 
-def estimate_noise(repeated_scores: list[float]) -> float:
+def estimate_noise(repeated_scores: Sequence[float]) -> float:
     """Noise floor from repeatedly scoring the SAME artifact on the SAME split.
 
     Score deltas smaller than the floor are silence, not signal. Sample
     standard deviation is a starting point; be conservative — probe several
     artifacts and take the largest floor you observe.
     """
-    if len(repeated_scores) < 2:
+    scores = list(repeated_scores)
+    if len(scores) < 2:
         raise ValueError("need at least two repeated scores to estimate noise")
-    return statistics.stdev(repeated_scores)
+    for value in scores:
+        if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+            raise ValueError(f"scores must be finite numbers in [0, 1], got {value!r}")
+    return statistics.stdev(scores)
 
 
 def _validate(scores: Scores, name: str) -> None:
@@ -79,7 +84,7 @@ def evaluate(baseline: Scores, candidate: Scores, epsilon: float) -> Decision:
     elif heldout_delta < -epsilon:
         verdict = Verdict.DISCARD_OVERFIT
         reason = f"held-out {heldout_delta:+.3f} regresses beyond the noise floor ({epsilon:.3f})"
-        if train_delta > -epsilon:
+        if train_delta > 0:
             reason += f"; train {train_delta:+.3f} — the over-fit signature"
     else:
         verdict = Verdict.KEEP_PARETO

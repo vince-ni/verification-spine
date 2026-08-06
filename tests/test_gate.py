@@ -85,3 +85,29 @@ def test_non_finite_epsilon_is_rejected():
     for bad in (math.nan, math.inf):
         with pytest.raises(ValueError):
             evaluate(ok, ok, bad)
+
+
+def test_exact_boundary_deltas_stay_inside_the_floor():
+    # Exactly-representable binary fractions so delta == epsilon holds exactly.
+    epsilon = 0.25
+    baseline = Scores(train=0.5, heldout=0.5)
+    up = Scores(train=0.5, heldout=0.75)
+    down = Scores(train=0.5, heldout=0.25)
+    assert evaluate(baseline, up, epsilon).verdict is Verdict.KEEP_PARETO
+    assert evaluate(baseline, down, epsilon).verdict is Verdict.KEEP_PARETO
+
+
+def test_overfit_signature_only_when_train_actually_rises():
+    baseline = Scores(train=0.5, heldout=0.5)
+    train_also_fell = evaluate(baseline, Scores(train=0.49, heldout=0.45), EPSILON)
+    assert train_also_fell.verdict is Verdict.DISCARD_OVERFIT
+    assert "signature" not in train_also_fell.reason
+    train_rose = evaluate(baseline, Scores(train=0.51, heldout=0.45), EPSILON)
+    assert "signature" in train_rose.reason
+
+
+def test_estimate_noise_rejects_invalid_scores():
+    import math
+    for bad in (math.nan, math.inf, -0.1, 1.1):
+        with pytest.raises(ValueError):
+            estimate_noise([0.5, bad])

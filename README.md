@@ -34,14 +34,16 @@ On June 9, 2026, the originating system's prompt-evolution loop produced a candi
 
 Round 2's training "gain" (+0.004) was inside the measured noise floor (ε = 0.017); its held-out regression (−0.045) was 2.7× the floor. It had learned the test, not the job. Full write-up: [docs/heldout-gate.md](docs/heldout-gate.md).
 
-The test suite replays these incidents with the original numbers — the receipts are executable. The suite also encodes a cross-vendor adversarial review of this very repo (gate fail-open on NaN/inf, promotion-log newline injection, zero-width acks — all caught by a reviewer model from a different vendor, reproduced, and fixed with regression tests).
+The test suite replays these incidents with the original numbers — the receipts are executable. The suite also encodes two cross-vendor adversarial review rounds against this very repo: the first caught gate fail-open on NaN/inf, newline injection, and zero-width acks; the second (run to top-OSS standards) drove the JSONL log format, gate-coupled promotion, and boundary hardening in v0.2. Every finding was reproduced by hand before being fixed, and each fix ships with its regression test.
+
+*Honest scope note: these numbers come from the originating system's private run logs. The tests let you reproduce the mechanism's verdicts on the recorded values — they do not independently attest the underlying events. Sanitized primary-log fixtures are on the roadmap.*
 
 ## Quickstart
 
 ```bash
 git clone https://github.com/vince-ni/verification-spine.git
-cd verification-spine && pip install -e .
-pytest -q   # 25 passed
+cd verification-spine && pip install -e '.[test]'
+pytest -q
 ```
 
 ```python
@@ -57,14 +59,14 @@ print(decision.reason)
 # held-out -0.045 regresses beyond the noise floor (0.017); train +0.004 — the over-fit signature
 ```
 
-Promotion is a separate, human-anchored event — the log refuses automation:
+Promotion is a separate event, coupled to the gate: the log refuses candidates that did not earn `keep-advance`, and refuses entries without an explicit acknowledgment. (What the library can enforce is that a caller supplied the acknowledgment — proving the acknowledger is human belongs to your deployment: approval UIs, signed slips, file permissions.)
 
 ```python
 from verification_spine import PromotionLog
 
 log = PromotionLog("promotions.log")
-log.promote("candidate-r2", "instruction text", heldout=0.6818, ack="")
-# ValueError: promotion requires an explicit human acknowledgment; refusing
+log.promote("candidate-r2", "instruction text", heldout=0.6818, ack="approved", decision=decision)
+# ValueError: only keep-advance candidates can be promoted; verdict was discard-overfit
 ```
 
 Estimate your noise floor from repeated scoring of the *same* artifact:
@@ -79,7 +81,7 @@ epsilon = estimate_noise([0.812, 0.798, 0.805, 0.821])
 | Module | What it does | Why it exists |
 |---|---|---|
 | `gate.py` | `evaluate(baseline, candidate, epsilon) -> Decision` with three verdicts: `keep-advance` / `keep-pareto` / `discard-overfit` | Scores become decisions only through a noise floor; the comparison logic is fixed in code so nobody gets to argue that 0.825 &gt; 0.821 means progress |
-| `log.py` | `PromotionLog` — append-only, refuses entries without a human acknowledgment | Passing the gate ≠ shipping. The originating system has exactly one formal promotion in its history and zero auto-promotions |
+| `log.py` | `PromotionLog` — append-only JSONL, refuses candidates that didn't pass the gate and entries without an explicit acknowledgment | Passing the gate ≠ shipping. The originating system has exactly one formal promotion in its history and zero auto-promotions |
 | `folding.py` | `fold_fullwidth()` — targeted full-width→ASCII folding that leaves ™ and other symbols untouched | Extracted from a real judge regression: an NFKC "fix" folded ™→TM and silently weakened the judge. See [docs/cross-vendor-review.md](docs/cross-vendor-review.md) |
 
 ## Design principles

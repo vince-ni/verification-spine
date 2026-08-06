@@ -20,7 +20,7 @@ The system's skills (prompt + scaffold bundles) improve through a reflective-evo
 - **Generalization across subjects.** Five held-out gate passes across three unrelated skill domains (structuring, verification, SEO), including a verification skill lifted 0.750 → 1.000 in two independent runs.
 - **One formal promotion, human-acknowledged.** Held-out 0.8247 → 0.9336, promoted only after explicit human sign-off.
 - **The gate also refuses.** A later candidate scored 0.9520 against a promoted baseline of 0.9563 — inside the noise floor — and the machine declined to promote. Restraint is a feature.
-- **234 tests** on the kernel (as of Aug 2026).
+- **234 tests** on the kernel (as of Aug 2026 — the private originating system, not this repository; this repo's own suite is smaller and public).
 
 ## Memory with an expiry date
 
