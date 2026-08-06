@@ -59,3 +59,29 @@ def test_estimate_noise_is_zero_for_identical_scores():
 
 def test_estimate_noise_grows_with_spread():
     assert estimate_noise([0.7, 0.9]) > estimate_noise([0.79, 0.81])
+
+
+def test_non_finite_scores_are_rejected():
+    import math
+    ok = Scores(train=0.5, heldout=0.5)
+    for bad in (math.nan, math.inf, -math.inf):
+        with pytest.raises(ValueError):
+            evaluate(ok, Scores(train=bad, heldout=0.5), EPSILON)
+        with pytest.raises(ValueError):
+            evaluate(Scores(train=0.5, heldout=bad), ok, EPSILON)
+
+
+def test_out_of_range_scores_are_rejected():
+    ok = Scores(train=0.5, heldout=0.5)
+    with pytest.raises(ValueError):
+        evaluate(ok, Scores(train=0.5, heldout=1.1), EPSILON)
+    with pytest.raises(ValueError):
+        evaluate(ok, Scores(train=-0.1, heldout=0.5), EPSILON)
+
+
+def test_non_finite_epsilon_is_rejected():
+    import math
+    ok = Scores(train=0.5, heldout=0.5)
+    for bad in (math.nan, math.inf):
+        with pytest.raises(ValueError):
+            evaluate(ok, ok, bad)

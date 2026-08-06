@@ -35,3 +35,24 @@ def test_ack_may_contain_the_separator(tmp_path):
     log.promote("cand", "text", heldout=0.9, ack="approved | numbers must trace to a source")
     (read,) = log.entries()
     assert read.ack == "approved | numbers must trace to a source"
+
+
+def test_newline_injection_in_ack_is_rejected(tmp_path):
+    log = PromotionLog(tmp_path / "promotions.log")
+    forged = "approved\n2026-01-01T00:00:00+00:00 | id=evil | sha256=fake | heldout=1.0000 | ack=forged"
+    with pytest.raises(ValueError):
+        log.promote("real", "artifact", heldout=0.9, ack=forged)
+    assert log.entries() == []
+
+
+def test_control_characters_in_candidate_id_are_rejected(tmp_path):
+    log = PromotionLog(tmp_path / "promotions.log")
+    with pytest.raises(ValueError):
+        log.promote("evil\nid", "artifact", heldout=0.9, ack="approved")
+
+
+def test_zero_width_only_ack_is_rejected(tmp_path):
+    log = PromotionLog(tmp_path / "promotions.log")
+    with pytest.raises(ValueError):
+        log.promote("cand", "artifact", heldout=0.9, ack="​​")
+    assert log.entries() == []

@@ -8,6 +8,7 @@ is a separate, human-anchored step (see log.py).
 """
 from __future__ import annotations
 
+import math
 import statistics
 from dataclasses import dataclass
 from enum import Enum
@@ -48,15 +49,27 @@ def estimate_noise(repeated_scores: list[float]) -> float:
     return statistics.stdev(repeated_scores)
 
 
+def _validate(scores: Scores, name: str) -> None:
+    for field in ("train", "heldout"):
+        value = getattr(scores, field)
+        if not math.isfinite(value) or not 0.0 <= value <= 1.0:
+            raise ValueError(f"{name}.{field} must be a finite number in [0, 1], got {value!r}")
+
+
 def evaluate(baseline: Scores, candidate: Scores, epsilon: float) -> Decision:
     """Decide a candidate's fate against a baseline, through the noise floor.
 
     Only the held-out delta decides. Train fitness is carried for diagnosis —
     the over-fit signature is train up while held-out falls — but a train gain
     never earns a pass on its own.
+
+    Invalid inputs raise instead of judging: a gate that fails open on NaN,
+    infinity, or out-of-range scores would let corrupted scoring promote.
     """
-    if epsilon < 0:
-        raise ValueError("epsilon must be non-negative")
+    if not math.isfinite(epsilon) or epsilon < 0:
+        raise ValueError(f"epsilon must be a finite non-negative number, got {epsilon!r}")
+    _validate(baseline, "baseline")
+    _validate(candidate, "candidate")
     train_delta = candidate.train - baseline.train
     heldout_delta = candidate.heldout - baseline.heldout
 

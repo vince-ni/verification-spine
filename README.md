@@ -34,14 +34,14 @@ On June 9, 2026, the originating system's prompt-evolution loop produced a candi
 
 Round 2's training "gain" (+0.004) was inside the measured noise floor (ε = 0.017); its held-out regression (−0.045) was 2.7× the floor. It had learned the test, not the job. Full write-up: [docs/heldout-gate.md](docs/heldout-gate.md).
 
-The test suite replays these incidents with the original numbers — the receipts are executable.
+The test suite replays these incidents with the original numbers — the receipts are executable. The suite also encodes a cross-vendor adversarial review of this very repo (gate fail-open on NaN/inf, promotion-log newline injection, zero-width acks — all caught by a reviewer model from a different vendor, reproduced, and fixed with regression tests).
 
 ## Quickstart
 
 ```bash
 git clone https://github.com/vince-ni/verification-spine.git
 cd verification-spine && pip install -e .
-pytest -q   # 18 passed
+pytest -q   # 25 passed
 ```
 
 ```python

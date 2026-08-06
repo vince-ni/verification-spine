@@ -28,3 +28,4 @@ packages = ["verification_spine"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]

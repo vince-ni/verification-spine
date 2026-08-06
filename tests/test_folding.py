@@ -35,3 +35,7 @@ def test_nfkc_demonstrates_the_trap():
     # Why this module exists: blanket NFKC folds symbols along with widths.
     assert unicodedata.normalize("NFKC", "™") == "TM"
     assert fold_fullwidth("™") == "™"
+
+
+def test_ideographic_space_folds_to_plain_space():
+    assert fold_fullwidth("Ａ　Ｂ") == "A B"

@@ -9,11 +9,26 @@ deployment concern — filesystem permissions, git history, or both.)
 from __future__ import annotations
 
 import hashlib
+import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
 _SEP = " | "
+
+_INVISIBLE_CATEGORIES = {"Cc", "Cf", "Zs", "Zl", "Zp"}
+
+
+def _has_visible_character(text: str) -> bool:
+    return any(unicodedata.category(ch) not in _INVISIBLE_CATEGORIES for ch in text)
+
+
+def _reject_control_characters(value: str, field: str) -> None:
+    if any(unicodedata.category(ch) == "Cc" for ch in value):
+        raise ValueError(
+            f"{field} must not contain control characters — a newline would let "
+            "one promote() call forge additional log lines"
+        )
 
 
 @dataclass(frozen=True)
@@ -32,8 +47,15 @@ class PromotionLog:
         self.path = Path(path)
 
     def promote(self, candidate_id: str, artifact: str, heldout: float, ack: str) -> Promotion:
-        """Record a promotion. Refuses silently-automated promotions by design."""
-        if not ack or not ack.strip():
+        """Record a promotion. Refuses silently-automated promotions by design.
+
+        The ack must contain at least one visible character (whitespace-only and
+        zero-width strings are refused), and neither ack nor candidate_id may
+        contain control characters (newline injection would forge log lines).
+        """
+        _reject_control_characters(candidate_id, "candidate_id")
+        _reject_control_characters(ack, "ack")
+        if not ack or not _has_visible_character(ack):
             raise ValueError(
                 "promotion requires an explicit human acknowledgment; refusing"
             )

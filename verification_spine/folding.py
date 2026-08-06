@@ -10,10 +10,16 @@ exactly the range you intend and nothing else.
 """
 from __future__ import annotations
 
-# Full-width ASCII block (U+FF01–FF5E) maps to ASCII by a fixed offset.
+# Full-width ASCII block (U+FF01–FF5E) maps to ASCII by a fixed offset;
+# the ideographic space (U+3000) maps to a plain space so spaced phrases
+# cannot be evaded either.
 _FULLWIDTH_TO_ASCII = {code: code - 0xFEE0 for code in range(0xFF01, 0xFF5F)}
+_FULLWIDTH_TO_ASCII[0x3000] = 0x20
 
 
 def fold_fullwidth(text: str) -> str:
-    """Map full-width ASCII characters to ASCII. Symbols are left untouched."""
+    """Map full-width ASCII characters and the ideographic space to ASCII.
+
+    Symbols (™, ©, ligatures, …) are left untouched — that is the point.
+    """
     return text.translate(_FULLWIDTH_TO_ASCII)
