@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "verification-spine"
+version = "0.1.0"
+description = "A minimal held-out promotion gate for self-improving prompts and agents: disjoint splits, a noise floor, verdicts instead of scores, and human-anchored promotion."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Vince (Shenjunyan) Ni" }]
+keywords = ["evals", "prompt-optimization", "held-out", "agents", "llm"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Homepage = "https://vince-ni.github.io"
+Repository = "https://github.com/vince-ni/verification-spine"
+
+[tool.setuptools]
+packages = ["verification_spine"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
