@@ -22,6 +22,21 @@ flowchart LR
     H -->|no| F
 ```
 
+## What this solves — and what it doesn't
+
+**Solved here:** the decision layer of a self-improving loop. Two fitness
+numbers become an auditable verdict through a noise floor, with the
+comparison logic fixed in code; production promotion is coupled to that
+verdict plus an explicit acknowledgment, recorded append-only.
+
+**You bring:** the scoring function (rubrics, model judges, test suites),
+the held-out set itself, and its hygiene — rotation, adversarial refresh,
+enough cases for the signal you need.
+
+**Out of scope by design:** statistical power at small n, proving an
+acknowledger is human, and tamper-evidence of the log file — the exact
+boundary is written down in [SECURITY.md](SECURITY.md).
+
 ## The incident this comes from
 
 On June 9, 2026, the originating system's prompt-evolution loop produced a candidate that scored *higher* on its training objective and *worse* on held-out. The gate discarded it automatically. Verbatim fitness values from the run log:
@@ -75,6 +90,29 @@ Estimate your noise floor from repeated scoring of the *same* artifact:
 from verification_spine import estimate_noise
 epsilon = estimate_noise([0.812, 0.798, 0.805, 0.821])
 ```
+
+## Wiring it into your loop
+
+The gate sits between your scorer and your mutation step; the log sits
+outside the loop entirely:
+
+```python
+epsilon = estimate_noise(repeated_scores)      # once per slot, before optimizing
+
+for candidate in mutate(baseline_artifact):
+    scores = Scores(train=score(candidate, feedback_set),
+                    heldout=score(candidate, heldout_set))
+    decision = evaluate(baseline_scores, scores, epsilon)
+    if decision.verdict is Verdict.KEEP_ADVANCE:
+        baseline_artifact, baseline_scores = candidate, scores
+    # keep-pareto: archive; discard-overfit: never seeds further mutations
+
+# Shipping is a separate, acknowledged event — not part of the loop:
+log.promote(candidate_id, baseline_artifact, heldout=baseline_scores.heldout,
+            ack=reviewer_ack, decision=decision)
+```
+
+`examples/02_promotion_workflow.py` is the runnable version.
 
 ## What's in the box
 
