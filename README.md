@@ -36,7 +36,7 @@ Round 2's training "gain" (+0.004) was inside the measured noise floor (ε = 0.0
 
 The test suite replays these incidents with the original numbers — the receipts are executable. The suite also encodes two cross-vendor adversarial review rounds against this very repo: the first caught gate fail-open on NaN/inf, newline injection, and zero-width acks; the second (run to top-OSS standards) drove the JSONL log format, gate-coupled promotion, and boundary hardening in v0.2. Every finding was reproduced by hand before being fixed, and each fix ships with its regression test.
 
-*Honest scope note: these numbers come from the originating system's private run logs. The tests let you reproduce the mechanism's verdicts on the recorded values — they do not independently attest the underlying events. Sanitized primary-log fixtures are on the roadmap.*
+*Honest scope note: these numbers come from the originating system's private run logs. Sanitized primary-log fixtures ship in [docs/fixtures/](docs/fixtures/) — every recorded verdict is recomputed from them by `tests/test_fixtures.py` and `examples/03_replay_fixtures.py`. That makes the receipts mechanically reproducible; it does not independently attest the underlying production events (see [docs/fixtures/README.md](docs/fixtures/README.md) for the exact boundary).*
 
 ## Quickstart
 
@@ -103,11 +103,15 @@ epsilon = estimate_noise([0.812, 0.798, 0.805, 0.821])
 
 This is the mechanism, not the machine. The originating system (scheduling, memory governance, multi-model routing, the eval case banks) is private. The held-out sets here were small (single-digit cases) — the mechanism demonstrates discipline, not statistical power; at team scale you'd add adversarial case generation and periodic held-out rotation. Fitness is rubric pass-rate on deterministic checks, which can itself be gamed — which is exactly why promotion keeps a human in the loop.
 
+## Project
+
+[Examples](examples/) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security & threat model](SECURITY.md) · incident reports and architecture: [docs/](docs/)
+
 ## Related work
 
 - [GEPA](https://arxiv.org/abs/2507.19457) (ICLR 2026) — reflective prompt evolution with disjoint feedback/Pareto-validation sets; the loop design this gate assumes.
 - [DSPy](https://github.com/stanfordnlp/dspy) — prompts as learned parameters; the regime where held-out discipline stops being optional.
-- Architecture and incident reports: [docs/](docs/) · author: [vince-ni.github.io](https://vince-ni.github.io)
+- Author: [vince-ni.github.io](https://vince-ni.github.io)
 
 ## License
 
